@@ -42,7 +42,7 @@ def get_length_bits_count(mode: bitarray, version: int) -> int:
     bits_index = 0
     if version > 9:
         bits_index = 1
-    elif version > 26:
+    if version > 26:
         bits_index = 2
 
     return LENGTH_BITS[mode_index][bits_index]
@@ -61,7 +61,7 @@ def get_payload_bits(payload: str, mode: bitarray) -> bitarray:
 
 
 def combine_message(
-    encoding_mode: bitarray, length_bits: bitarray, payload_bits: bitarray, total_codewords: int
+    encoding_mode: bitarray, length_bits: bitarray, payload_bits: bitarray, total_data_codewords: int
 ) -> bitarray:
     """
     Combine the separate elements into a single bitarray.
@@ -69,13 +69,13 @@ def combine_message(
     """
     message_bits: bitarray = encoding_mode + length_bits + payload_bits
 
-    if len(message_bits) / 8 > total_codewords:
+    if len(message_bits) / 8 > total_data_codewords:
         raise ValueError(
-            f"Message too long! ({len(message_bits) / 8} codewords) Doesn't fit in {total_codewords} codewords."
+            f"Message too long! ({len(message_bits) / 8} codewords) Doesn't fit in {total_data_codewords} codewords."
         )
 
     # Add termination block. This is a maximum of 4 zeros, though it can be less if there is not enough space.
-    termination_length = min(total_codewords * 8 - len(message_bits), 4)
+    termination_length = min(total_data_codewords * 8 - len(message_bits), 4)
     message_bits += "0" * termination_length
 
     # Add zeros to make a whole number of codewords/bytes
@@ -84,7 +84,7 @@ def combine_message(
         message_bits += "0" * (8 - remainder)
 
     # Add padding bytes of alternating 17 and 236
-    remaining_bytes = total_codewords - (len(message_bits) // 8)
+    remaining_bytes = total_data_codewords - (len(message_bits) // 8)
     for i in range(remaining_bytes):
         message_bits += int_to_bitarray(17, 8) if i % 2 else int_to_bitarray(236, 8)
 

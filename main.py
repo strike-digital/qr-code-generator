@@ -63,6 +63,7 @@ def get_module_sequence(version: int) -> list[list[int, int]]:
     sequence = []
     index = 0
     while column >= 0:
+        yes = False
         if matrix[row][column] == 0:
             sequence.append([row, column])
 
@@ -70,6 +71,7 @@ def get_module_sequence(version: int) -> list[list[int, int]]:
         if index & 1:
             row += row_step
             if row == -1 or row == size:
+                yes = True
                 row_step = -row_step
                 row += row_step
                 column -= 2 if column == 7 else 1
@@ -171,7 +173,8 @@ def place_fixed_patterns(matrix: list[list[int]]):
     # Timing patterns
     # Something fishy going on here, with an off by one error seemingly not present in the tutorial code
     # for pos in range(8, VERSION * 4 + 8 + 1, 2):
-    for pos in range(8, size - 9, 2):
+    # for pos in range(8, size - 9, 2):
+    for pos in range(8, size - 8, 2):
         matrix[6][pos] = 1
         matrix[6][pos + 1] = 0
         matrix[pos][6] = 1
@@ -209,6 +212,12 @@ def get_masked_matrix(version: int, codewords: list[int], mask_index: int) -> li
         if i > len(codeword_bits) - 1:
             break
         qr_matrix[row][column] = codeword_bits[i] ^ mask_function(row, column)
+
+    # for row in range(len(qr_matrix)):
+    #     for column in range(len(qr_matrix)):
+    #         qr_matrix[row][column] = MASK_FNS[0](row, column)
+    #         print(row, column, MASK_FNS[0](row, column))
+    # display_qr_code(qr_matrix)
     return qr_matrix
 
 
@@ -265,10 +274,36 @@ def place_format_bits(matrix: list[list[int]], error_level: str, mask_index: int
 
 
 def get_qr_matrix_from_data(version: int, codewords: list[int], error_level: str, mask_index: int):
+    """Return the matrix of bits representing a (hopefully) valid QR code"""
     matrix = get_masked_matrix(version, codewords, mask_index)
     place_format_bits(matrix, error_level, mask_index)
     place_fixed_patterns(matrix)
     return matrix
+
+
+def get_line_penalty(line: list[int]) -> int:
+    "Calculate the penalty of a line of bits, according to mask rule #1"
+    count = 0
+    value = 0
+    penalty = 0
+
+    for bit in line:
+        if bit != value:
+            if count >= 5:
+                penalty += count - 3
+            value = bit
+            count = 1
+        else:
+            count += 1
+    print(penalty)
+    return penalty
+
+
+def calculate_qr_penalty(qr_matrix: list[list[int]]) -> int:
+    penalty = 0
+    for row in qr_matrix:
+        penalty += get_line_penalty(row)
+    print("Total", penalty)
 
 
 def create_qr_code(payload: str) -> list[list[int]]:
@@ -283,6 +318,7 @@ def create_qr_code(payload: str) -> list[list[int]]:
     codewords = data_codewords + error_codewords
 
     qr_code = get_qr_matrix_from_data(VERSION, codewords, ERROR_LEVEL, MASK_INDEX)
+    penalty = calculate_qr_penalty(qr_code)
     return qr_code
 
 
@@ -293,11 +329,14 @@ def main():
     # generator = get_generator_polynomial(16)
 
     TEMP_TOTAL_CODEWORDS = 28
-    # PAYLOAD = "https://www.qrcode.com/"
-    PAYLOAD = "https://www.sundial.co.uk/"
+    PAYLOAD = "https://www.qrcode.com/"
+    PAYLOAD = "Haha Hoho"
+    # PAYLOAD = "https://www.bbc.co.uk/"
 
     qr_code = create_qr_code(PAYLOAD)
-    display_qr_code(qr_code)
+    seq = get_module_sequence(2)
+    # display_qr_code(qr_code)
+
     # get_format_bits("H", 3)
     # qr_code = get_raw_qr_matrix(PAYLOAD)
     # place_format_bits(qr_code, "H", 3)

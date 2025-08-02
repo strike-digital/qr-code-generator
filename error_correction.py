@@ -26,7 +26,8 @@ def galois_mul(a: int, b: int) -> int:
 
 
 def galois_div(a: int, b: int) -> int:
-    return EXP[(LOG[a] + LOG[b] * 254) % 255]
+    ret = EXP[(LOG[a] + LOG[b] * 254) % 255]
+    return ret
 
 
 def polynomial_mul(poly_1: list[int], poly_2: list[int]) -> list[int]:
@@ -51,6 +52,7 @@ def polynomial_mul(poly_1: list[int], poly_2: list[int]) -> list[int]:
 def polynomial_remainder(dividend: list[int], divisor: list[int]) -> list[int]:
     """Get the remainder of the division of two polynomials, using galois arithmetic"""
     quotient_length = len(dividend) - len(divisor) + 1
+    print(quotient_length)
 
     remainder = dividend.copy()
 
